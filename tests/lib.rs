@@ -12,8 +12,8 @@ use {
   executable_path::executable_path,
   mockcore::TransactionTemplate,
   ord::{
-    api, chain::Chain, outgoing::Outgoing, subcommand::runes::RuneInfo, wallet::batch,
-    InscriptionId, RuneEntry,
+    api, chain::Chain, decimal::Decimal, outgoing::Outgoing, subcommand::runes::RuneInfo,
+    wallet::batch, InscriptionId, RuneEntry,
   },
   ordinals::{
     Artifact, Charm, Edict, Pile, Rarity, Rune, RuneId, Runestone, Sat, SatPoint, SpacedRune,
@@ -200,7 +200,7 @@ fn batch(core: &mockcore::Handle, ord: &TestServer, batchfile: batch::File) -> E
 
   assert_regex_match!(
     buffer,
-    "Waiting for rune commitment [[:xdigit:]]{64} to mature…\n"
+    "Waiting for rune .* commitment [[:xdigit:]]{64} to mature…\n"
   );
 
   core.mine_blocks(5);
@@ -321,6 +321,14 @@ fn batch(core: &mockcore::Handle, ord: &TestServer, batchfile: batch::File) -> E
 
   let RuneId { block, tx } = id;
 
+  let supply_int = supply.to_integer(divisibility).unwrap();
+  let premine_int = premine.to_integer(divisibility).unwrap();
+
+  let mint_progress = Decimal {
+    value: ((premine_int as f64 / supply_int as f64) * 10000.0) as u128,
+    scale: 2,
+  };
+
   ord.assert_response_regex(
     format!("/rune/{rune}"),
     format!(
@@ -334,8 +342,12 @@ fn batch(core: &mockcore::Handle, ord: &TestServer, batchfile: batch::File) -> E
   {}
   <dt>supply</dt>
   <dd>{premine} {symbol}</dd>
+  <dt>mint progress</dt>
+  <dd>{mint_progress}%</dd>
   <dt>premine</dt>
   <dd>{premine} {symbol}</dd>
+  <dt>premine percentage</dt>
+  <dd>.*</dd>
   <dt>burned</dt>
   <dd>0 {symbol}</dd>
   <dt>divisibility</dt>

@@ -4,7 +4,7 @@ pub(super) struct RuneUpdater<'a, 'tx, 'client> {
   pub(super) block_time: u32,
   pub(super) burned: HashMap<RuneId, Lot>,
   pub(super) client: &'client Client,
-  pub(super) event_sender: Option<&'a Sender<Event>>,
+  pub(super) event_sender: Option<&'a mpsc::Sender<Event>>,
   pub(super) height: u32,
   pub(super) id_to_entry: &'a mut Table<'tx, RuneIdValue, RuneEntryValue>,
   pub(super) inscription_id_to_sequence_number: &'a Table<'tx, InscriptionIdValue, u32>,
@@ -142,8 +142,7 @@ impl<'a, 'tx, 'client> RuneUpdater<'a, 'tx, 'client> {
         .unwrap_or_default();
 
       // assign all un-allocated runes to the default output, or the first non
-      // OP_RETURN output if there is no default, or if the default output is
-      // too large
+      // OP_RETURN output if there is no default
       if let Some(vout) = pointer
         .map(|pointer| pointer.into_usize())
         .inspect(|&pointer| assert!(pointer < allocated.len()))
